@@ -52,4 +52,22 @@ describe('applyAbility', () => {
     expect(result.players.find(p => p.id === 'p2').ability_uses).toBe(1)
     expect(result.players.find(p => p.id === 'p5').ability_uses).toBe(0)
   })
+
+  it('does not mutate the original state', () => {
+    const state = {
+      skipped: false,
+      assignedPlayerId: 'p1',
+      isDoubled: false,
+      removedOptionIds: [],
+      players: baseState.players.map(p => ({ ...p })),
+    }
+    const originalPlayers = state.players
+    const originalFirstPlayer = { ...state.players[0] }
+
+    applyAbility(state, { playerId: 'p1', role: 'paladin' })
+
+    expect(state.skipped).toBe(false)
+    expect(state.players).toBe(originalPlayers)
+    expect(state.players[0].ability_uses).toBe(originalFirstPlayer.ability_uses)
+  })
 })
