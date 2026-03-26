@@ -19,6 +19,7 @@ export default function PlayPage() {
   const nickname = usePlayerStore(s => s.nickname)
   const playerRole = usePlayerStore(s => s.role)
   const gameId = usePlayerStore(s => s.gameId)
+  const clearPlayer = usePlayerStore(s => s.clearPlayer)
 
   const setGame = useGameStore(s => s.setGame)
   const players = useGameStore(s => s.players)
@@ -133,9 +134,9 @@ export default function PlayPage() {
         break
 
       case 'game:restarted':
-        setPhase('lobby')
         resetQuestionState()
         setTeamScore(0)
+        setPhase('exited')
         break
     }
   }, [setActiveQuestion, setSecondsRemaining, setAnswered, setItems, updatePlayerAbilityUses, setRemovedOptionIds, setIsDoubled, resetQuestionState, playerId])
@@ -209,6 +210,22 @@ export default function PlayPage() {
         <h2 className="text-2xl font-bold">{nickname}</h2>
         <p className="text-indigo-400 font-semibold">{ROLES[role]?.label}</p>
         <p className="text-gray-400 mt-4">Esperando que inicie la partida…</p>
+      </div>
+    )
+  }
+
+  if (phase === 'exited') {
+    return (
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center gap-6 text-white px-4">
+        <span className="text-6xl">🎉</span>
+        <h1 className="text-3xl font-bold">¡Gracias por participar!</h1>
+        <p className="text-gray-400 text-lg">Puntuación del equipo: <span className="text-indigo-400 font-bold">{teamScore}</span></p>
+        <button
+          onClick={() => { clearPlayer(); navigate('/join', { replace: true }) }}
+          className="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-lg transition-all"
+        >
+          Volver a jugar
+        </button>
       </div>
     )
   }

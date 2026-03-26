@@ -24,6 +24,7 @@ export default function GameControls({ game, rounds }) {
   const [currentQIdx, setCurrentQIdx] = useState(0)
   const [gamePhase, setGamePhase] = useState('lobby') // lobby | round | question | finished
   const [paused, setPaused] = useState(false)
+  const [confirmingRestart, setConfirmingRestart] = useState(false)
 
   // Use a ref for emit to avoid circular dependency between handleEvent and useGameChannel
   const emitRef = useRef(null)
@@ -193,10 +194,13 @@ export default function GameControls({ game, rounds }) {
   async function restartGame() {
     stopTimer()
     resetQuestionState()
+    await supabase.from('players').delete().eq('game_id', game.id)
+    await supabase.from('game_items').delete().eq('game_id', game.id)
     await supabase.from('games').update({ status: 'waiting', team_score: 0 }).eq('id', game.id)
     await supabase.from('rounds').update({ status: 'pending' }).eq('game_id', game.id)
     emit('game:restarted', {})
     setGamePhase('lobby')
+    setConfirmingRestart(false)
   }
 
   if (gamePhase === 'lobby') {
@@ -221,9 +225,32 @@ export default function GameControls({ game, rounds }) {
             Siguiente pregunta →
           </button>
         )}
-        <button onClick={restartGame} className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded font-semibold">
-          ↺ Reiniciar
-        </button>
+        {!confirmingRestart ? (
+          <button
+            onClick={() => setConfirmingRestart(true)}
+            className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded font-semibold"
+          >
+            ↺ Reiniciar
+          </button>
+        ) : (
+          <div className="flex flex-col gap-2 bg-gray-800 border border-red-700 rounded-lg p-3">
+            <p className="text-red-300 text-sm font-semibold">¿Reiniciar partida? Los jugadores serán desconectados.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmingRestart(false)}
+                className="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={restartGame}
+                className="px-3 py-1.5 rounded bg-red-700 hover:bg-red-600 text-white text-sm font-semibold"
+              >
+                Sí, reiniciar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       {gamePhase === 'finished' && (
         <p className="text-green-400 font-bold text-lg">¡Juego terminado!</p>
