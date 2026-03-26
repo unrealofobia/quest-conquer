@@ -36,6 +36,7 @@ export default function PlayPage() {
   const itemUsedThisQuestion = useGameStore(s => s.itemUsedThisQuestion)
   const setItemUsed = useGameStore(s => s.setItemUsed)
   const setAnswered = useGameStore(s => s.setAnswered)
+  const answered = useGameStore(s => s.answered)
   const resetQuestionState = useGameStore(s => s.resetQuestionState)
   const updatePlayerAbilityUses = useGameStore(s => s.updatePlayerAbilityUses)
   const removedOptionIds = useGameStore(s => s.removedOptionIds)
@@ -46,6 +47,7 @@ export default function PlayPage() {
   const [phase, setPhase] = useState('lobby')
   const [showBardSelector, setShowBardSelector] = useState(false)
   const [teamScore, setTeamScore] = useState(0)
+  const [answerResult, setAnswerResult] = useState(null)
 
   const { track } = useLobbyPresence()
 
@@ -86,6 +88,7 @@ export default function PlayPage() {
             setActiveQuestion(q, payload.assigned_player_id, payload.time_limit)
           })
         setShowBardSelector(false)
+        setAnswerResult(null)
         break
 
       case 'timer:tick':
@@ -93,6 +96,11 @@ export default function PlayPage() {
         break
 
       case 'question:answered':
+        setTeamScore(payload.new_team_score)
+        setAnswered()
+        setAnswerResult({ isCorrect: payload.is_correct, scoreDelta: payload.score_delta })
+        break
+
       case 'question:timeout':
         setTeamScore(payload.new_team_score)
         setAnswered()
@@ -139,7 +147,7 @@ export default function PlayPage() {
         setPhase('exited')
         break
     }
-  }, [setActiveQuestion, setSecondsRemaining, setAnswered, setItems, updatePlayerAbilityUses, setRemovedOptionIds, setIsDoubled, resetQuestionState, playerId])
+  }, [setActiveQuestion, setSecondsRemaining, setAnswered, setItems, updatePlayerAbilityUses, setRemovedOptionIds, setIsDoubled, resetQuestionState, playerId, setAnswerResult])
 
   const { emit } = useGameChannel(handleEvent)
 
@@ -243,6 +251,12 @@ export default function PlayPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-6">
         <BardSelector teammates={teammates} onSelect={handleBardSelect} />
+        {phase === 'paused' && (
+          <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50">
+            <span className="text-5xl">⏸</span>
+            <p className="text-white text-3xl font-bold mt-4">En pausa</p>
+          </div>
+        )}
       </div>
     )
   }
@@ -260,6 +274,12 @@ export default function PlayPage() {
           disabled={phase === 'paused'}
           removedOptionIds={removedOptionIds}
         />
+        {phase === 'paused' && (
+          <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50">
+            <span className="text-5xl">⏸</span>
+            <p className="text-white text-3xl font-bold mt-4">En pausa</p>
+          </div>
+        )}
       </div>
     )
   }
@@ -271,6 +291,17 @@ export default function PlayPage() {
         <p className="text-gray-400 text-sm">{assignedNickname} está respondiendo</p>
         <p className="text-white font-bold tabular-nums">{secondsRemaining ?? '--'}s</p>
       </div>
+      {answered && answerResult && (
+        <div className={`rounded-xl p-4 text-center ${answerResult.isCorrect ? 'bg-green-900/50 border border-green-600' : 'bg-red-900/50 border border-red-600'}`}>
+          <p className="text-2xl font-bold text-white">
+            {answerResult.isCorrect ? '✅ ¡Correcto!' : '❌ Incorrecto'}
+          </p>
+          <p className={`text-lg font-semibold mt-1 ${answerResult.isCorrect ? 'text-green-400' : 'text-red-400'}`}>
+            {answerResult.scoreDelta >= 0 ? '+' : ''}{answerResult.scoreDelta} pts
+          </p>
+          <p className="text-gray-400 text-sm mt-3">Esperando siguiente pregunta…</p>
+        </div>
+      )}
       <AbilityPanel
         role={role}
         abilityUses={abilityUses}
@@ -285,6 +316,12 @@ export default function PlayPage() {
       <div className="text-center text-gray-500 text-sm">
         Puntos del equipo: <span className="text-white font-bold">{teamScore}</span>
       </div>
+      {phase === 'paused' && (
+        <div className="fixed inset-0 bg-black/70 flex flex-col items-center justify-center z-50">
+          <span className="text-5xl">⏸</span>
+          <p className="text-white text-3xl font-bold mt-4">En pausa</p>
+        </div>
+      )}
     </div>
   )
 }
