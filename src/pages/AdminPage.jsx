@@ -1,13 +1,16 @@
 // src/pages/AdminPage.jsx
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import { ROLES } from '../lib/constants'
 import GameCreator from '../components/admin/GameCreator'
 import RoundBuilder from '../components/admin/RoundBuilder'
 import GameQR from '../components/admin/GameQR'
+import GameControls from '../components/admin/GameControls'
 
 export default function AdminPage() {
   const rounds = useGameStore(s => s.rounds)
   const game = useGameStore(s => s.game)
+  const players = useGameStore(s => s.players)
   const [step, setStep] = useState('create') // 'create' | 'build' | 'lobby'
 
   if (step === 'create') {
@@ -25,7 +28,7 @@ export default function AdminPage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">Configurar rondas</h1>
           <button onClick={() => setStep('lobby')} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded">
-            Listo → Ver sala de espera
+            Listo → Sala de espera
           </button>
         </div>
         {rounds.map(round => <RoundBuilder key={round.id} round={round} />)}
@@ -33,15 +36,23 @@ export default function AdminPage() {
     )
   }
 
-  if (step === 'lobby') {
-    return (
-      <div className="p-8 bg-gray-900 min-h-screen space-y-6">
-        <h1 className="text-2xl font-bold text-white">Sala de espera</h1>
+  return (
+    <div className="p-8 bg-gray-900 min-h-screen space-y-6">
+      <h1 className="text-2xl font-bold text-white">Quest & Conquer — Admin</h1>
+      <div className="flex gap-8 flex-wrap">
         <GameQR gameId={game?.id} />
-        {/* GameControls will be added in Task 13 */}
+        <div className="space-y-4">
+          <div>
+            <p className="text-gray-400 text-sm">Jugadores ({players.length}/5)</p>
+            <ul className="mt-2 space-y-1">
+              {players.map(p => (
+                <li key={p.id} className="text-white text-sm">{ROLES[p.role]?.icon} {p.nickname} — {ROLES[p.role]?.label}</li>
+              ))}
+            </ul>
+          </div>
+          {game && rounds.length > 0 && <GameControls game={game} rounds={rounds} />}
+        </div>
       </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }
