@@ -205,9 +205,37 @@ export default function GameControls({ game, rounds }) {
 
   if (gamePhase === 'lobby') {
     return (
-      <button onClick={startGame} className="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold text-lg">
-        Iniciar partida
-      </button>
+      <div className="flex flex-col gap-4">
+        <button onClick={startGame} className="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded-xl font-bold text-lg">
+          Iniciar partida
+        </button>
+        {!confirmingRestart ? (
+          <button
+            onClick={() => setConfirmingRestart(true)}
+            className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded font-semibold"
+          >
+            ↺ Purgar jugadores
+          </button>
+        ) : (
+          <div className="flex flex-col gap-2 bg-gray-800 border border-red-700 rounded-lg p-3">
+            <p className="text-red-300 text-sm font-semibold">¿Purgar jugadores? Los jugadores serán desconectados.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmingRestart(false)}
+                className="px-3 py-1.5 rounded bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={restartGame}
+                className="px-3 py-1.5 rounded bg-red-700 hover:bg-red-600 text-white text-sm font-semibold"
+              >
+                Sí, purgar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     )
   }
 
