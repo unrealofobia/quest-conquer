@@ -1,7 +1,9 @@
 // src/pages/AdminPage.jsx
 import { useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { useGameStore } from '../store/gameStore'
 import { ROLES } from '../lib/constants'
+import GamesDashboard from '../components/admin/GamesDashboard'
 import GameCreator from '../components/admin/GameCreator'
 import RoundBuilder from '../components/admin/RoundBuilder'
 import GameQR from '../components/admin/GameQR'
@@ -11,7 +13,25 @@ export default function AdminPage() {
   const rounds = useGameStore(s => s.rounds)
   const game = useGameStore(s => s.game)
   const players = useGameStore(s => s.players)
-  const [step, setStep] = useState('create') // 'create' | 'build' | 'lobby'
+  const setGame = useGameStore(s => s.setGame)
+  const setRounds = useGameStore(s => s.setRounds)
+  const [step, setStep] = useState('dashboard') // 'dashboard' | 'create' | 'build' | 'lobby'
+
+  async function handleSelectGame(selectedGame) {
+    const { data: roundsData } = await supabase
+      .from('rounds')
+      .select('*, questions(*, question_options(*))')
+      .eq('game_id', selectedGame.id)
+      .order('round_number', { ascending: true })
+
+    setGame(selectedGame)
+    setRounds(roundsData ?? [])
+    setStep('lobby')
+  }
+
+  if (step === 'dashboard') {
+    return <GamesDashboard onSelectGame={handleSelectGame} onNewGame={() => setStep('create')} />
+  }
 
   if (step === 'create') {
     return (
