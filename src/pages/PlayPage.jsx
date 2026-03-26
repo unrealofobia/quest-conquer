@@ -37,6 +37,7 @@ export default function PlayPage() {
   const setAnswered = useGameStore(s => s.setAnswered)
   const resetQuestionState = useGameStore(s => s.resetQuestionState)
   const updatePlayerAbilityUses = useGameStore(s => s.updatePlayerAbilityUses)
+  const removedOptionIds = useGameStore(s => s.removedOptionIds)
   const setRemovedOptionIds = useGameStore(s => s.setRemovedOptionIds)
   const setIsDoubled = useGameStore(s => s.setIsDoubled)
   const setHeartActive = useGameStore(s => s.setHeartActive)
@@ -137,7 +138,7 @@ export default function PlayPage() {
         setTeamScore(0)
         break
     }
-  }, [setActiveQuestion, setSecondsRemaining, setAnswered, setItems, updatePlayerAbilityUses, setRemovedOptionIds, setIsDoubled, setHeartActive, resetQuestionState, playerId])
+  }, [setActiveQuestion, setSecondsRemaining, setAnswered, setItems, updatePlayerAbilityUses, setRemovedOptionIds, setIsDoubled, resetQuestionState, playerId])
 
   const { emit } = useGameChannel(handleEvent)
 
@@ -240,6 +241,7 @@ export default function PlayPage() {
           question={activeQuestion}
           onAnswer={handleAnswer}
           disabled={phase === 'paused'}
+          removedOptionIds={removedOptionIds}
         />
       </div>
     )

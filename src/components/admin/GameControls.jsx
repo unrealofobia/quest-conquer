@@ -17,6 +17,7 @@ export default function GameControls({ game, rounds }) {
   const setActiveQuestion = useGameStore(s => s.setActiveQuestion)
   const setAnswered = useGameStore(s => s.setAnswered)
   const resetQuestionState = useGameStore(s => s.resetQuestionState)
+  const answered = useGameStore(s => s.answered)
 
   const [currentRoundIdx, setCurrentRoundIdx] = useState(0)
   const [questionQueue, setQuestionQueue] = useState([])
@@ -38,6 +39,7 @@ export default function GameControls({ game, rounds }) {
     const heartOn = useGameStore.getState().heartActive
     const delta = heartOn ? 0 : -q.points_wrong
     const { data: g } = await supabase.from('games').select('team_score').eq('id', game.id).single()
+    if (!g) return
     const newScore = g.team_score + delta
     await supabase.from('games').update({ team_score: newScore }).eq('id', game.id)
     emitRef.current?.('question:timeout', { question_id: q.id, new_team_score: newScore })
@@ -51,7 +53,51 @@ export default function GameControls({ game, rounds }) {
       const current = useGameStore.getState().secondsRemaining ?? 0
       startTimer(current + CLOCK_BONUS_SECONDS)
     }
-  }, [startTimer])
+    if (event === 'question:answered') {
+      stopTimer()
+      const q = useGameStore.getState().activeQuestion
+      if (!q) return
+      const doubled = useGameStore.getState().isDoubled
+      const heart = useGameStore.getState().heartActive
+
+      const delta = calcScoreDelta({
+        isCorrect: payload.is_correct,
+        pointsCorrect: q.points_correct,
+        pointsWrong: q.points_wrong,
+        isDoubled: doubled,
+        heartActive: heart,
+      })
+
+      supabase.from('games').select('team_score').eq('id', game.id).single()
+        .then(({ data: g }) => {
+          if (!g) return
+          const newScore = g.team_score + delta
+          supabase.from('games').update({ team_score: newScore }).eq('id', game.id)
+
+          emitRef.current?.('question:answered', {
+            player_id: payload.player_id,
+            option_id: payload.option_id,
+            is_correct: payload.is_correct,
+            score_delta: delta,
+            new_team_score: newScore,
+          })
+
+          useGameStore.getState().setAnswered()
+
+          // Item drop on correct answer
+          if (payload.is_correct) {
+            const itemType = rollItemDrop()
+            if (itemType) {
+              supabase.from('game_items').insert({ game_id: game.id, type: itemType })
+                .select().single()
+                .then(({ data: item }) => {
+                  if (item) emitRef.current?.('item:dropped', { item_type: itemType, game_item_id: item.id })
+                })
+            }
+          }
+        })
+    }
+  }, [startTimer, stopTimer, game])
 
   const { emit } = useGameChannel(handleEvent)
 
@@ -160,8 +206,6 @@ export default function GameControls({ game, rounds }) {
       </button>
     )
   }
-
-  const answered = useGameStore.getState().answered
 
   return (
     <div className="space-y-4">

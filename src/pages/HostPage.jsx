@@ -27,6 +27,7 @@ export default function HostPage() {
   const updatePlayerAbilityUses = useGameStore(s => s.updatePlayerAbilityUses)
   const setAnswered = useGameStore(s => s.setAnswered)
   const resetQuestionState = useGameStore(s => s.resetQuestionState)
+  const assignedPlayerId = useGameStore(s => s.assignedPlayerId)
 
   const [phase, setPhase] = useState('lobby')
   const [teamScore, setTeamScore] = useState(0)
@@ -143,7 +144,7 @@ export default function HostPage() {
 
   useGameChannel(handleEvent)
 
-  const assignedPlayer = players.find(p => p.id === useGameStore.getState().assignedPlayerId)
+  const assignedPlayer = players.find(p => p.id === assignedPlayerId)
 
   if (phase === 'lobby') {
     return <LobbyView players={players} onStart={() => {}} />
